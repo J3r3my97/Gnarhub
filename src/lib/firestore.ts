@@ -288,6 +288,13 @@ export async function createConversation(
   participants: string[]
 ): Promise<string> {
   if (!db) throw new Error('Database not initialized');
+
+  // Check if conversation already exists for this session
+  const existing = await getConversationBySession(sessionId);
+  if (existing) {
+    return existing.id;
+  }
+
   const docRef = await addDoc(collection(db, 'conversations'), {
     sessionId,
     participants,

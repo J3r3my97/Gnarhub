@@ -14,6 +14,7 @@ import {
   cancelSession,
   deleteSession,
   sessionHasRequests,
+  getUserConversations,
 } from '@/lib/firestore';
 import { getMountainById } from '@/data/mountains';
 import {
@@ -49,6 +50,9 @@ export default function DashboardPage() {
   const [filmerSessions, setFilmerSessions] = useState<Session[]>([]);
   const [incomingRequests, setIncomingRequests] = useState<SessionRequest[]>([]);
 
+  // Conversations mapped by sessionId
+  const [conversationsBySession, setConversationsBySession] = useState<Record<string, string>>({});
+
   const fetchData = async () => {
     if (!user) return;
     setLoading(true);
@@ -78,13 +82,21 @@ export default function DashboardPage() {
       setRiderSessions(sessionsData);
       setFilmers(filmersData);
 
+      // Fetch conversations to map sessionId -> conversationId
+      const conversations = await getUserConversations(user.id);
+      const convoMap: Record<string, string> = {};
+      conversations.forEach((convo) => {
+        convoMap[convo.sessionId] = convo.id;
+      });
+      setConversationsBySession(convoMap);
+
       // Fetch filmer data (if user is a filmer)
       if (user.isFilmer) {
         const sessions = await getFilmerSessions(user.id);
         setFilmerSessions(sessions);
 
         const filmerRequests = await getUserRequests(user.id, true);
-        setIncomingRequests(filmerRequests.filter((r) => r.status === 'pending'));
+        setIncomingRequests(filmerRequests.filter((r) => r.status === 'pending' || r.status === 'counter_offered'));
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -163,6 +175,7 @@ export default function DashboardPage() {
           past={pastRequests}
           sessions={riderSessions}
           filmers={filmers}
+          conversationsBySession={conversationsBySession}
         />
       ) : (
         <FilmerDashboard
@@ -170,6 +183,7 @@ export default function DashboardPage() {
           openSessions={openSessions}
           bookedSessions={bookedSessions}
           incomingRequests={incomingRequests}
+          conversationsBySession={conversationsBySession}
           onSessionUpdated={fetchData}
         />
       )}
@@ -183,12 +197,14 @@ function RiderDashboard({
   past,
   sessions,
   filmers,
+  conversationsBySession,
 }: {
   pending: SessionRequest[];
   accepted: SessionRequest[];
   past: SessionRequest[];
   sessions: Record<string, Session>;
   filmers: Record<string, User>;
+  conversationsBySession: Record<string, string>;
 }) {
   if (pending.length === 0 && accepted.length === 0 && past.length === 0) {
     return (
@@ -212,6 +228,7 @@ function RiderDashboard({
               const filmer = filmers[request.filmerId];
               if (!session || !filmer) return null;
               const mountain = getMountainById(session.mountainId);
+              const conversationId = conversationsBySession[request.sessionId];
               return (
                 <RequestCard
                   key={request.id}
@@ -219,6 +236,7 @@ function RiderDashboard({
                   session={session}
                   otherUser={filmer}
                   mountain={mountain}
+                  conversationId={conversationId}
                 />
               );
             })}
@@ -235,6 +253,7 @@ function RiderDashboard({
               const filmer = filmers[request.filmerId];
               if (!session || !filmer) return null;
               const mountain = getMountainById(session.mountainId);
+              const conversationId = conversationsBySession[request.sessionId];
               return (
                 <RequestCard
                   key={request.id}
@@ -242,6 +261,7 @@ function RiderDashboard({
                   session={session}
                   otherUser={filmer}
                   mountain={mountain}
+                  conversationId={conversationId}
                 />
               );
             })}
@@ -258,6 +278,7 @@ function RiderDashboard({
               const filmer = filmers[request.filmerId];
               if (!session || !filmer) return null;
               const mountain = getMountainById(session.mountainId);
+              const conversationId = conversationsBySession[request.sessionId];
               return (
                 <RequestCard
                   key={request.id}
@@ -265,6 +286,7 @@ function RiderDashboard({
                   session={session}
                   otherUser={filmer}
                   mountain={mountain}
+                  conversationId={conversationId}
                   showReviewButton
                 />
               );
@@ -281,12 +303,14 @@ function FilmerDashboard({
   openSessions,
   bookedSessions,
   incomingRequests,
+  conversationsBySession,
   onSessionUpdated,
 }: {
   user: User;
   openSessions: Session[];
   bookedSessions: Session[];
   incomingRequests: SessionRequest[];
+  conversationsBySession: Record<string, string>;
   onSessionUpdated: () => void;
 }) {
   if (!user.isFilmer) {
@@ -308,25 +332,28 @@ function FilmerDashboard({
             Incoming Requests ({incomingRequests.length})
           </h2>
           <div className="space-y-4">
-            {incomingRequests.map((request) => (
-              <Card key={request.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <StatusBadge status={request.status} />
-                      <p className="text-gray-600 mt-2">{request.message}</p>
-                      <p className="font-medium mt-2">{formatCurrency(request.amount)}</p>
+            {incomingRequests.map((request) => {
+              const conversationId = conversationsBySession[request.sessionId];
+              return (
+                <Card key={request.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <StatusBadge status={request.status} />
+                        <p className="text-gray-600 mt-2">{request.message}</p>
+                        <p className="font-medium mt-2">{formatCurrency(request.amount)}</p>
+                      </div>
+                      <Link href={conversationId ? `/messages/${conversationId}` : '/messages'}>
+                        <Button size="sm">
+                          <MessageSquare className="h-4 w-4 mr-2" />
+                          View
+                        </Button>
+                      </Link>
                     </div>
-                    <Link href={`/messages`}>
-                      <Button size="sm">
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                        View
-                      </Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </section>
       )}
@@ -387,12 +414,14 @@ function RequestCard({
   session,
   otherUser,
   mountain,
+  conversationId,
   showReviewButton,
 }: {
   request: SessionRequest;
   session: Session;
   otherUser: User;
   mountain?: { name: string } | null;
+  conversationId?: string;
   showReviewButton?: boolean;
 }) {
   return (
@@ -411,7 +440,7 @@ function RequestCard({
             <p className="font-medium mt-2">{formatCurrency(request.amount)}</p>
           </div>
           <div className="flex gap-2">
-            <Link href="/messages">
+            <Link href={conversationId ? `/messages/${conversationId}` : '/messages'}>
               <Button variant="ghost" size="sm">
                 <MessageSquare className="h-4 w-4" />
               </Button>
