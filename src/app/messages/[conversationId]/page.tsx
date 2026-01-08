@@ -18,6 +18,7 @@ import {
   declineCounterOffer,
 } from '@/lib/firestore';
 import { getMountainById } from '@/data/mountains';
+import { notify } from '@/lib/notify';
 import { Button, Card, StatusBadge, Modal, Input, Textarea } from '@/components/ui';
 import { BackLink } from '@/components/layout/back-link';
 import { formatDate, formatTimeRange, formatCurrency } from '@/lib/utils';
@@ -134,11 +135,25 @@ export default function ConversationPage({ params }: ConversationPageProps) {
   };
 
   const handleAccept = async () => {
-    if (!request || !session) return;
+    if (!request || !session || !otherUser) return;
     setResponding(true);
     try {
       await updateSessionRequest(request.id, { status: 'accepted' });
       await updateSession(session.id, { status: 'booked', riderId: request.riderId, requestId: request.id });
+
+      // Notify rider that request was accepted
+      const mountain = getMountainById(session.mountainId);
+      notify({
+        type: 'request_accepted',
+        data: {
+          riderEmail: otherUser.email,
+          riderName: otherUser.displayName,
+          filmerName: user!.displayName,
+          sessionDate: session.date,
+          mountain: mountain?.name || 'Unknown',
+        },
+      });
+
       await fetchData(); // Refresh data
     } catch (error) {
       console.error('Error accepting request:', error);
@@ -148,10 +163,22 @@ export default function ConversationPage({ params }: ConversationPageProps) {
   };
 
   const handleDecline = async () => {
-    if (!request) return;
+    if (!request || !session || !otherUser) return;
     setResponding(true);
     try {
       await updateSessionRequest(request.id, { status: 'declined' });
+
+      // Notify rider that request was declined
+      notify({
+        type: 'request_declined',
+        data: {
+          riderEmail: otherUser.email,
+          riderName: otherUser.displayName,
+          filmerName: user!.displayName,
+          sessionDate: session.date,
+        },
+      });
+
       await fetchData(); // Refresh data
     } catch (error) {
       console.error('Error declining request:', error);
@@ -161,7 +188,7 @@ export default function ConversationPage({ params }: ConversationPageProps) {
   };
 
   const handleSendCounterOffer = async () => {
-    if (!request) return;
+    if (!request || !otherUser) return;
     setResponding(true);
     try {
       await createCounterOffer(request.id, {
@@ -176,6 +203,19 @@ export default function ConversationPage({ params }: ConversationPageProps) {
         user!.id,
         `I'd like to suggest a different time: ${counterStartTime} - ${counterEndTime} for ${formatCurrency(parseFloat(counterAmount))}. ${counterMessage}`
       );
+
+      // Notify rider about counter offer
+      notify({
+        type: 'counter_offer',
+        data: {
+          riderEmail: otherUser.email,
+          riderName: otherUser.displayName,
+          filmerName: user!.displayName,
+          newTime: `${counterStartTime} - ${counterEndTime}`,
+          newRate: parseFloat(counterAmount),
+        },
+      });
+
       setCounterOfferModalOpen(false);
       await fetchData(); // Refresh data
     } catch (error) {
@@ -186,10 +226,24 @@ export default function ConversationPage({ params }: ConversationPageProps) {
   };
 
   const handleAcceptCounterOffer = async () => {
-    if (!request) return;
+    if (!request || !session || !otherUser) return;
     setResponding(true);
     try {
       await acceptCounterOffer(request.id);
+
+      // Notify filmer that counter offer was accepted
+      const mountain = getMountainById(session.mountainId);
+      notify({
+        type: 'counter_offer_accepted',
+        data: {
+          filmerEmail: otherUser.email,
+          filmerName: otherUser.displayName,
+          riderName: user!.displayName,
+          sessionDate: session.date,
+          mountain: mountain?.name || 'Unknown',
+        },
+      });
+
       await fetchData(); // Refresh data
     } catch (error) {
       console.error('Error accepting counter offer:', error);
