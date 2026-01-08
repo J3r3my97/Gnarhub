@@ -1,0 +1,179 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/auth-context';
+import { TerrainTag } from '@/types';
+import { mountains } from '@/data/mountains';
+import { createSession } from '@/lib/firestore';
+import { Button, Input, Select, Textarea, Checkbox } from '@/components/ui';
+import { BackLink } from '@/components/layout/back-link';
+import { format, addDays } from 'date-fns';
+
+export default function PostSessionPage() {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
+
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  // Form state
+  const [mountainId, setMountainId] = useState('');
+  const [date, setDate] = useState(format(addDays(new Date(), 1), 'yyyy-MM-dd'));
+  const [startTime, setStartTime] = useState('10:00');
+  const [endTime, setEndTime] = useState('14:00');
+  const [terrainTags, setTerrainTags] = useState<TerrainTag[]>([]);
+  const [rate, setRate] = useState('60');
+  const [notes, setNotes] = useState('');
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login');
+    } else if (!authLoading && user && !user.isFilmer) {
+      router.push('/dashboard/filmer-setup');
+    }
+  }, [user, authLoading, router]);
+
+  const handleTerrainToggle = (tag: TerrainTag) => {
+    setTerrainTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    // Validation
+    if (!mountainId) {
+      setError('Please select a mountain');
+      return;
+    }
+    if (terrainTags.length === 0) {
+      setError('Please select at least one terrain type');
+      return;
+    }
+    if (startTime >= endTime) {
+      setError('End time must be after start time');
+      return;
+    }
+
+    setError('');
+    setSubmitting(true);
+
+    try {
+      await createSession({
+        filmerId: user.id,
+        status: 'open',
+        mountainId,
+        date,
+        startTime,
+        endTime,
+        terrainTags,
+        rate: parseInt(rate, 10),
+        notes: notes || null,
+        riderId: null,
+        requestId: null,
+      });
+
+      router.push('/dashboard');
+    } catch (err) {
+      console.error('Error creating session:', err);
+      setError('Failed to create session. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (authLoading || !user) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <BackLink href="/dashboard" label="Back to Dashboard" />
+
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">Post a Session</h1>
+
+      <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-xl p-6">
+        <div className="space-y-6">
+          <Select
+            label="Mountain"
+            value={mountainId}
+            onChange={(e) => setMountainId(e.target.value)}
+            options={mountains.map((m) => ({ value: m.id, label: `${m.name}, ${m.state}` }))}
+            placeholder="Select a mountain"
+          />
+
+          <Input label="Date" type="date" value={date} onChange={(e) => setDate(e.target.value)} min={format(new Date(), 'yyyy-MM-dd')} />
+
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Start Time"
+              type="time"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+            />
+            <Input
+              label="End Time"
+              type="time"
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Terrain</label>
+            <div className="flex flex-wrap gap-4">
+              <Checkbox
+                label="Park"
+                checked={terrainTags.includes('park')}
+                onChange={() => handleTerrainToggle('park')}
+              />
+              <Checkbox
+                label="All-Mountain"
+                checked={terrainTags.includes('all-mountain')}
+                onChange={() => handleTerrainToggle('all-mountain')}
+              />
+              <Checkbox
+                label="Groomers"
+                checked={terrainTags.includes('groomers')}
+                onChange={() => handleTerrainToggle('groomers')}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Input
+              label="Session Rate ($)"
+              type="number"
+              value={rate}
+              onChange={(e) => setRate(e.target.value)}
+              min="20"
+              max="200"
+            />
+            <p className="text-sm text-gray-500 mt-1">Suggested range: $40-80</p>
+          </div>
+
+          <Textarea
+            label="Notes (optional)"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Any additional info about this session..."
+            rows={3}
+          />
+
+          {error && <p className="text-sm text-red-600">{error}</p>}
+
+          <Button type="submit" className="w-full" size="lg" loading={submitting}>
+            Post Session
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+}
