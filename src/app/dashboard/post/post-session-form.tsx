@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { TerrainTag } from '@/types';
 import { mountains } from '@/data/mountains';
 import { createSession } from '@/lib/firestore';
+import { validateSessionForm, sanitizeString, RATE_MIN, RATE_MAX } from '@/lib/validation';
 import { Button, Input, Select, Textarea, Checkbox } from '@/components/ui';
 import { BackLink } from '@/components/layout/back-link';
 import { format, addDays } from 'date-fns';
@@ -62,17 +63,25 @@ function PostSessionFormInner() {
     e.preventDefault();
     if (!user) return;
 
-    // Validation
-    if (!mountainId) {
-      setError('Please select a mountain');
-      return;
-    }
-    if (terrainTags.length === 0) {
-      setError('Please select at least one terrain type');
-      return;
-    }
-    if (startTime >= endTime) {
-      setError('End time must be after start time');
+    const parsedRate = parseInt(rate, 10);
+    const validMountainIds = mountains.map((m) => m.id);
+
+    // Validate using validation utilities
+    const validation = validateSessionForm(
+      {
+        mountainId,
+        date,
+        startTime,
+        endTime,
+        terrainTags,
+        rate: parsedRate,
+        notes: notes || undefined,
+      },
+      validMountainIds
+    );
+
+    if (!validation.valid) {
+      setError(validation.error || 'Invalid form data');
       return;
     }
 
@@ -88,8 +97,8 @@ function PostSessionFormInner() {
         startTime,
         endTime,
         terrainTags,
-        rate: parseInt(rate, 10),
-        notes: notes || null,
+        rate: parsedRate,
+        notes: notes ? sanitizeString(notes) : null,
         riderId: null,
         requestId: null,
       });
@@ -171,10 +180,10 @@ function PostSessionFormInner() {
               type="number"
               value={rate}
               onChange={(e) => setRate(e.target.value)}
-              min="20"
-              max="200"
+              min={RATE_MIN.toString()}
+              max={RATE_MAX.toString()}
             />
-            <p className="text-sm text-gray-500 mt-1">Suggested range: $40-80</p>
+            <p className="text-sm text-gray-500 mt-1">Range: ${RATE_MIN}-${RATE_MAX}</p>
           </div>
 
           <Textarea

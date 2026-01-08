@@ -6,6 +6,8 @@ import { useAuth } from '@/contexts/auth-context';
 import { Session, User, TerrainTag } from '@/types';
 import { getSession, getUser, createSessionRequest, createConversation } from '@/lib/firestore';
 import { getMountainById } from '@/data/mountains';
+import { notify } from '@/lib/notify';
+import { validateRequestForm, sanitizeString } from '@/lib/validation';
 import { Button, Textarea, Checkbox } from '@/components/ui';
 import { BackLink } from '@/components/layout/back-link';
 import { formatDate, formatTimeRange, formatCurrency } from '@/lib/utils';
@@ -66,6 +68,13 @@ export default function RequestSessionPage({ params }: RequestPageProps) {
     e.preventDefault();
     if (!session || !filmer || !user) return;
 
+    // Validate form
+    const validation = validateRequestForm({ message, terrainTags });
+    if (!validation.valid) {
+      alert(validation.error);
+      return;
+    }
+
     setSubmitting(true);
     try {
       // Create the session request
@@ -74,7 +83,7 @@ export default function RequestSessionPage({ params }: RequestPageProps) {
         riderId: user.id,
         filmerId: session.filmerId,
         status: 'pending',
-        message,
+        message: sanitizeString(message),
         riderTerrainLevel: terrainTags,
         amount: session.rate,
         stripePaymentIntentId: null,
@@ -82,6 +91,19 @@ export default function RequestSessionPage({ params }: RequestPageProps) {
 
       // Create a conversation
       const conversationId = await createConversation(session.id, [user.id, session.filmerId]);
+
+      // Send notification to filmer
+      const mountain = getMountainById(session.mountainId);
+      notify({
+        type: 'new_request',
+        data: {
+          filmerEmail: filmer.email,
+          filmerName: filmer.displayName,
+          riderName: user.displayName,
+          sessionDate: session.date,
+          mountain: mountain?.name || 'Unknown',
+        },
+      });
 
       // Redirect to conversation
       router.push(`/messages/${conversationId}`);
@@ -110,7 +132,22 @@ export default function RequestSessionPage({ params }: RequestPageProps) {
     );
   }
 
+  // Prevent self-booking
+  const isOwnSession = user?.id === session.filmerId;
+
   const mountain = getMountainById(session.mountainId);
+
+  if (isOwnSession) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        <BackLink />
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-center">
+          <h2 className="text-lg font-semibold text-yellow-800 mb-2">This is your session</h2>
+          <p className="text-yellow-700">You cannot book your own session.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

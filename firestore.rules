@@ -1,0 +1,113 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Validate rate is within bounds
+    function isValidRate(rate) {
+      return rate >= 20 && rate <= 500;
+    }
+
+    // Validate date is not in the past
+    function isValidDate(date) {
+      return date >= request.time.date();
+    }
+
+    // Users - anyone authenticated can read, only owner can write
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if false; // Users cannot delete their accounts directly
+    }
+
+    // Mountains - read only (seeded data)
+    match /mountains/{mountainId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Sessions
+    match /sessions/{sessionId} {
+      allow read: if true;
+
+      // Only authenticated users can create, must be the filmer, rate must be valid
+      allow create: if isAuthenticated()
+        && request.resource.data.filmerId == request.auth.uid
+        && isValidRate(request.resource.data.rate);
+
+      // Filmer can update their own sessions, or rider being assigned can update
+      allow update: if isAuthenticated()
+        && (resource.data.filmerId == request.auth.uid
+            || resource.data.riderId == request.auth.uid
+            || request.resource.data.riderId == request.auth.uid);
+
+      // Only filmer can delete their own sessions
+      allow delete: if isAuthenticated()
+        && resource.data.filmerId == request.auth.uid;
+    }
+
+    // Session Requests
+    match /sessionRequests/{requestId} {
+      // Only participants can read
+      allow read: if isAuthenticated()
+        && (resource.data.riderId == request.auth.uid
+            || resource.data.filmerId == request.auth.uid);
+
+      // Rider creates request, cannot book own session
+      allow create: if isAuthenticated()
+        && request.resource.data.riderId == request.auth.uid
+        && request.resource.data.riderId != request.resource.data.filmerId;
+
+      // Participants can update (accept, decline, counter-offer)
+      allow update: if isAuthenticated()
+        && (resource.data.riderId == request.auth.uid
+            || resource.data.filmerId == request.auth.uid);
+
+      // No direct deletion of requests
+      allow delete: if false;
+    }
+
+    // Conversations
+    match /conversations/{convoId} {
+      // Must be participant to create
+      allow create: if isAuthenticated()
+        && request.auth.uid in request.resource.data.participants;
+
+      // Must be participant to read or update
+      allow read, update: if isAuthenticated()
+        && request.auth.uid in resource.data.participants;
+
+      allow delete: if false;
+    }
+
+    // Messages (top-level collection)
+    match /messages/{messageId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Reviews
+    match /reviews/{reviewId} {
+      // Anyone can read reviews
+      allow read: if true;
+
+      // Only rider can create, must be valid rating
+      allow create: if isAuthenticated()
+        && request.resource.data.riderId == request.auth.uid
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5;
+
+      // No editing or deleting reviews
+      allow update, delete: if false;
+    }
+  }
+}
