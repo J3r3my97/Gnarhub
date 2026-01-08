@@ -10,7 +10,7 @@ import {
   orderBy,
   Timestamp,
   onSnapshot,
-  limit,
+  limit as firestoreLimit,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { User, Session, SessionRequest, Conversation, Message, Review } from '@/types';
@@ -55,6 +55,52 @@ export async function getSessions(filters: {
   if (filters.terrainTags && filters.terrainTags.length > 0) {
     sessions = sessions.filter((session) =>
       session.terrainTags.some((tag) => filters.terrainTags!.includes(tag))
+    );
+  }
+
+  return sessions;
+}
+
+// Get all upcoming open sessions for discovery browsing
+export async function getAllUpcomingSessions(options: {
+  limitDays?: number;
+  limitCount?: number;
+  mountainId?: string;
+  terrainTags?: string[];
+} = {}): Promise<Session[]> {
+  if (!db) return [];
+
+  const { limitDays = 14, limitCount = 50, mountainId, terrainTags } = options;
+
+  // Calculate date range
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0]; // 'yyyy-MM-dd'
+
+  const endDate = new Date(today);
+  endDate.setDate(endDate.getDate() + limitDays);
+  const endDateStr = endDate.toISOString().split('T')[0];
+
+  // Build query - get all open sessions from today to limitDays in the future
+  let q = query(
+    collection(db, 'sessions'),
+    where('status', '==', 'open'),
+    where('date', '>=', todayStr),
+    where('date', '<=', endDateStr),
+    orderBy('date', 'asc'),
+    firestoreLimit(limitCount)
+  );
+
+  const snapshot = await getDocs(q);
+  let sessions = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Session));
+
+  // Apply optional filters client-side
+  if (mountainId) {
+    sessions = sessions.filter((s) => s.mountainId === mountainId);
+  }
+
+  if (terrainTags && terrainTags.length > 0) {
+    sessions = sessions.filter((session) =>
+      session.terrainTags.some((tag) => terrainTags.includes(tag))
     );
   }
 
@@ -175,7 +221,7 @@ export async function getUserConversations(userId: string): Promise<Conversation
 
 export async function getConversationBySession(sessionId: string): Promise<Conversation | null> {
   if (!db) return null;
-  const q = query(collection(db, 'conversations'), where('sessionId', '==', sessionId), limit(1));
+  const q = query(collection(db, 'conversations'), where('sessionId', '==', sessionId), firestoreLimit(1));
   const snapshot = await getDocs(q);
   if (snapshot.empty) return null;
   return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as Conversation;
