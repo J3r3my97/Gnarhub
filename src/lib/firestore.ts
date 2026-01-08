@@ -185,11 +185,12 @@ export async function sessionHasRequests(sessionId: string): Promise<boolean> {
 
 // Session Requests
 export async function createSessionRequest(
-  data: Omit<SessionRequest, 'id' | 'createdAt' | 'respondedAt'>
+  data: Omit<SessionRequest, 'id' | 'createdAt' | 'respondedAt' | 'counterOffer'>
 ): Promise<string> {
   if (!db) throw new Error('Database not initialized');
   const docRef = await addDoc(collection(db, 'sessionRequests'), {
     ...data,
+    counterOffer: null,
     createdAt: Timestamp.now(),
     respondedAt: null,
   });
