@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Session, User, Mountain } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import { RatingDisplay } from '@/components/ui/rating';
 import { TerrainBadge } from '@/components/ui/badge';
 import { formatDate, formatTimeRange, formatCurrency } from '@/lib/utils';
@@ -67,13 +68,10 @@ export function SessionCardCompact({ session, mountain }: { session: Session; mo
               ))}
             </div>
           </div>
-          <div className="text-right">
-            <p className="font-semibold text-gray-900">{formatCurrency(session.rate)}</p>
-            <Link
-              href={`/request/${session.id}`}
-              className="inline-block mt-2 text-sm font-medium text-blue-600 hover:text-blue-700"
-            >
-              Request Session
+          <div className="text-right flex flex-col items-end gap-2">
+            <p className="font-semibold text-gray-900 text-lg">{formatCurrency(session.rate)}</p>
+            <Link href={`/request/${session.id}`}>
+              <Button size="sm">Book Session</Button>
             </Link>
           </div>
         </div>
