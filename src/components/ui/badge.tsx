@@ -35,6 +35,7 @@ export function StatusBadge({ status }: { status: string }) {
     completed: { variant: 'default', label: 'Completed' },
     cancelled: { variant: 'error', label: 'Cancelled' },
     declined: { variant: 'error', label: 'Declined' },
+    counter_offered: { variant: 'warning', label: 'Counter Offer' },
   };
 
   const config = statusConfig[status] || { variant: 'default', label: status };

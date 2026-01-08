@@ -4,7 +4,8 @@ import { Timestamp } from 'firebase/firestore';
 export type Pass = 'ikon' | 'epic' | 'indy' | 'local' | 'other';
 export type TerrainTag = 'park' | 'all-mountain' | 'groomers';
 export type SessionStatus = 'open' | 'booked' | 'completed' | 'cancelled';
-export type RequestStatus = 'pending' | 'accepted' | 'declined' | 'cancelled' | 'completed';
+export type RequestStatus = 'pending' | 'accepted' | 'declined' | 'cancelled' | 'completed' | 'counter_offered';
+export type CounterOfferStatus = 'pending' | 'accepted' | 'declined' | 'expired';
 
 // User
 export interface User {
@@ -68,6 +69,17 @@ export interface Session {
   updatedAt: Timestamp;
 }
 
+// Counter Offer (from filmer to rider)
+export interface CounterOffer {
+  id: string;
+  startTime: string;
+  endTime: string;
+  amount: number;
+  message: string;
+  status: CounterOfferStatus;
+  createdAt: Timestamp;
+}
+
 // Session Request
 export interface SessionRequest {
   id: string;
@@ -84,6 +96,9 @@ export interface SessionRequest {
   // Payment
   amount: number;
   stripePaymentIntentId: string | null;
+
+  // Counter offer from filmer
+  counterOffer: CounterOffer | null;
 
   createdAt: Timestamp;
   respondedAt: Timestamp | null;

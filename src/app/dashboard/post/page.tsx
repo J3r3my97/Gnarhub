@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { TerrainTag } from '@/types';
 import { mountains } from '@/data/mountains';
@@ -13,11 +13,12 @@ import { format, addDays } from 'date-fns';
 export default function PostSessionPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  // Form state
+  // Form state - initialized from URL params if duplicating
   const [mountainId, setMountainId] = useState('');
   const [date, setDate] = useState(format(addDays(new Date(), 1), 'yyyy-MM-dd'));
   const [startTime, setStartTime] = useState('10:00');
@@ -25,6 +26,23 @@ export default function PostSessionPage() {
   const [terrainTags, setTerrainTags] = useState<TerrainTag[]>([]);
   const [rate, setRate] = useState('60');
   const [notes, setNotes] = useState('');
+
+  // Pre-fill form from URL params (when duplicating a session)
+  useEffect(() => {
+    const paramMountainId = searchParams.get('mountainId');
+    const paramStartTime = searchParams.get('startTime');
+    const paramEndTime = searchParams.get('endTime');
+    const paramRate = searchParams.get('rate');
+    const paramTerrainTags = searchParams.get('terrainTags');
+    const paramNotes = searchParams.get('notes');
+
+    if (paramMountainId) setMountainId(paramMountainId);
+    if (paramStartTime) setStartTime(paramStartTime);
+    if (paramEndTime) setEndTime(paramEndTime);
+    if (paramRate) setRate(paramRate);
+    if (paramTerrainTags) setTerrainTags(paramTerrainTags.split(',') as TerrainTag[]);
+    if (paramNotes) setNotes(paramNotes);
+  }, [searchParams]);
 
   useEffect(() => {
     if (!authLoading && !user) {

@@ -13,7 +13,7 @@ import {
   limit as firestoreLimit,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { User, Session, SessionRequest, Conversation, Message, Review } from '@/types';
+import { User, Session, SessionRequest, Conversation, Message, Review, CounterOffer } from '@/types';
 
 // Users
 export async function getUser(userId: string): Promise<User | null> {
@@ -67,25 +67,37 @@ export async function getAllUpcomingSessions(options: {
   limitCount?: number;
   mountainId?: string;
   terrainTags?: string[];
+  startDate?: string;
+  endDate?: string;
 } = {}): Promise<Session[]> {
   if (!db) return [];
 
-  const { limitDays = 14, limitCount = 50, mountainId, terrainTags } = options;
+  const { limitDays = 14, limitCount = 50, mountainId, terrainTags, startDate, endDate } = options;
 
-  // Calculate date range
+  // Calculate date range - use explicit dates if provided, otherwise use limitDays
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0]; // 'yyyy-MM-dd'
 
-  const endDate = new Date(today);
-  endDate.setDate(endDate.getDate() + limitDays);
-  const endDateStr = endDate.toISOString().split('T')[0];
+  let queryStartDate = startDate || todayStr;
+  let queryEndDate = endDate;
 
-  // Build query - get all open sessions from today to limitDays in the future
-  let q = query(
+  if (!queryEndDate) {
+    const endDateObj = new Date(today);
+    endDateObj.setDate(endDateObj.getDate() + limitDays);
+    queryEndDate = endDateObj.toISOString().split('T')[0];
+  }
+
+  // Ensure start date is not in the past
+  if (queryStartDate < todayStr) {
+    queryStartDate = todayStr;
+  }
+
+  // Build query - get all open sessions in the date range
+  const q = query(
     collection(db, 'sessions'),
     where('status', '==', 'open'),
-    where('date', '>=', todayStr),
-    where('date', '<=', endDateStr),
+    where('date', '>=', queryStartDate),
+    where('date', '<=', queryEndDate),
     orderBy('date', 'asc'),
     firestoreLimit(limitCount)
   );
@@ -143,6 +155,34 @@ export async function updateSession(sessionId: string, data: Partial<Session>): 
   });
 }
 
+// Cancel a session (sets status to cancelled)
+export async function cancelSession(sessionId: string): Promise<void> {
+  if (!db) return;
+  await updateDoc(doc(db, 'sessions', sessionId), {
+    status: 'cancelled',
+    updatedAt: Timestamp.now(),
+  });
+}
+
+// Delete a session (only if it has no requests)
+export async function deleteSession(sessionId: string): Promise<void> {
+  if (!db) return;
+  const { deleteDoc } = await import('firebase/firestore');
+  await deleteDoc(doc(db, 'sessions', sessionId));
+}
+
+// Check if a session has any requests
+export async function sessionHasRequests(sessionId: string): Promise<boolean> {
+  if (!db) return false;
+  const q = query(
+    collection(db, 'sessionRequests'),
+    where('sessionId', '==', sessionId),
+    firestoreLimit(1)
+  );
+  const snapshot = await getDocs(q);
+  return !snapshot.empty;
+}
+
 // Session Requests
 export async function createSessionRequest(
   data: Omit<SessionRequest, 'id' | 'createdAt' | 'respondedAt'>
@@ -184,6 +224,61 @@ export async function getUserRequests(userId: string, asFilmer: boolean): Promis
   );
   const snapshot = await getDocs(q);
   return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as SessionRequest));
+}
+
+// Counter Offers
+export async function createCounterOffer(
+  requestId: string,
+  counterOffer: Omit<CounterOffer, 'id' | 'createdAt' | 'status'>
+): Promise<void> {
+  if (!db) return;
+  const counterId = `co_${Date.now()}`;
+  await updateDoc(doc(db, 'sessionRequests', requestId), {
+    status: 'counter_offered',
+    counterOffer: {
+      id: counterId,
+      ...counterOffer,
+      status: 'pending',
+      createdAt: Timestamp.now(),
+    },
+    respondedAt: Timestamp.now(),
+  });
+}
+
+export async function acceptCounterOffer(requestId: string): Promise<void> {
+  if (!db) return;
+
+  // Get the request to access the counter offer details
+  const request = await getSessionRequest(requestId);
+  if (!request || !request.counterOffer) return;
+
+  // Update request with accepted counter offer
+  await updateDoc(doc(db, 'sessionRequests', requestId), {
+    status: 'accepted',
+    amount: request.counterOffer.amount, // Update amount to counter offer amount
+    'counterOffer.status': 'accepted',
+    respondedAt: Timestamp.now(),
+  });
+
+  // Update the session to booked with new time
+  await updateDoc(doc(db, 'sessions', request.sessionId), {
+    status: 'booked',
+    riderId: request.riderId,
+    requestId: requestId,
+    startTime: request.counterOffer.startTime,
+    endTime: request.counterOffer.endTime,
+    rate: request.counterOffer.amount,
+    updatedAt: Timestamp.now(),
+  });
+}
+
+export async function declineCounterOffer(requestId: string): Promise<void> {
+  if (!db) return;
+  await updateDoc(doc(db, 'sessionRequests', requestId), {
+    status: 'declined',
+    'counterOffer.status': 'declined',
+    respondedAt: Timestamp.now(),
+  });
 }
 
 // Conversations
