@@ -1,4 +1,4 @@
-const FROM_EMAIL = process.env.NOTIFICATION_FROM_EMAIL || 'Gnarhub <noreply@gnarhub.com>';
+const FROM_EMAIL = process.env.NOTIFICATION_FROM_EMAIL || 'Gnarhub <noreply@alerts.aurafarmer.co>';
 
 // Dynamic import to avoid build-time errors when API key isn't set
 async function getResendClient() {
