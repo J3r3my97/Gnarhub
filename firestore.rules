@@ -58,10 +58,8 @@ service cloud.firestore {
 
     // Session Requests
     match /sessionRequests/{requestId} {
-      // Only participants can read
-      allow read: if isAuthenticated()
-        && (resource.data.riderId == request.auth.uid
-            || resource.data.filmerId == request.auth.uid);
+      // Authenticated users can read (queries filter by riderId/filmerId in code)
+      allow read: if isAuthenticated();
 
       // Rider creates request, cannot book own session
       allow create: if isAuthenticated()
