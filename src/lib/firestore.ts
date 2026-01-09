@@ -188,6 +188,18 @@ export async function createSessionRequest(
   data: Omit<SessionRequest, 'id' | 'createdAt' | 'respondedAt' | 'counterOffer'>
 ): Promise<string> {
   if (!db) throw new Error('Database not initialized');
+
+  // Debug: Log auth state and request data
+  const { auth } = await import('./firebase');
+  const currentUser = auth?.currentUser;
+  console.log('[createSessionRequest] Debug info:', {
+    currentUserUid: currentUser?.uid,
+    riderId: data.riderId,
+    filmerId: data.filmerId,
+    uidMatchesRiderId: currentUser?.uid === data.riderId,
+    riderIsNotFilmer: data.riderId !== data.filmerId,
+  });
+
   const docRef = await addDoc(collection(db, 'sessionRequests'), {
     ...data,
     counterOffer: null,
