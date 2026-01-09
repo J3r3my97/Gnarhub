@@ -195,8 +195,10 @@ export default function BrowsePage() {
 
   if (authLoading || !user) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] bg-[#0a0a0a]">
+        <div className="relative">
+          <div className="w-12 h-12 border-2 border-[#00f5ff] rounded-full animate-spin border-t-transparent" />
+        </div>
       </div>
     );
   }
@@ -205,41 +207,41 @@ export default function BrowsePage() {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Browse Sessions</h1>
-          <p className="text-gray-600 mt-1">Discover filmers available in the next 2 weeks</p>
+          <h1 className="text-2xl font-bold text-[#f5f0e8] uppercase tracking-wide">Browse Sessions</h1>
+          <p className="text-[#8b8b8b] mt-1">Discover filmers available in the next 2 weeks</p>
         </div>
       </div>
 
       {/* Collapsible Filters */}
-      <div className="bg-white border border-gray-200 rounded-xl mb-6 overflow-hidden">
+      <div className="bg-[#1a1a1a] border-2 border-[#333333] mb-6 overflow-hidden">
         <button
           onClick={() => setFiltersOpen(!filtersOpen)}
-          className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
+          className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-[#2a2a2a] transition-colors"
         >
           <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-gray-500" />
-            <span className="font-medium text-gray-700">
+            <Filter className="h-4 w-4 text-[#8b8b8b]" />
+            <span className="font-medium text-[#f5f0e8]">
               {hasActiveFilters ? 'Filters applied' : 'Filter results'}
             </span>
             {hasActiveFilters && (
-              <span className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">
+              <span className="bg-[#00f5ff]/10 text-[#00f5ff] text-xs px-2 py-0.5 border border-[#00f5ff]/30">
                 {activeFilterCount} active
               </span>
             )}
           </div>
           {filtersOpen ? (
-            <ChevronUp className="h-4 w-4 text-gray-500" />
+            <ChevronUp className="h-4 w-4 text-[#8b8b8b]" />
           ) : (
-            <ChevronDown className="h-4 w-4 text-gray-500" />
+            <ChevronDown className="h-4 w-4 text-[#8b8b8b]" />
           )}
         </button>
 
         {filtersOpen && (
-          <div className="px-4 pb-4 border-t border-gray-100">
+          <div className="px-4 pb-4 border-t-2 border-[#333333]">
             <div className="space-y-4 pt-4">
               {/* Date Range Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">When</label>
+                <label className="block text-sm font-medium text-[#f5f0e8] mb-2 uppercase tracking-wide">When</label>
                 <div className="flex flex-wrap gap-2">
                   {[
                     { value: 'any', label: 'Any upcoming' },
@@ -251,10 +253,10 @@ export default function BrowsePage() {
                     <button
                       key={option.value}
                       onClick={() => setDateRange(option.value as DateRangeOption)}
-                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                      className={`px-3 py-1.5 text-sm font-medium transition-all duration-200 border-2 ${
                         dateRange === option.value
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-[#00f5ff] text-[#0a0a0a] border-[#00f5ff]'
+                          : 'bg-transparent text-[#8b8b8b] border-[#333333] hover:border-[#00f5ff]/50 hover:text-[#f5f0e8]'
                       }`}
                     >
                       {option.label}
@@ -267,7 +269,7 @@ export default function BrowsePage() {
                     value={customDate}
                     onChange={(e) => setCustomDate(e.target.value)}
                     min={format(new Date(), 'yyyy-MM-dd')}
-                    className="mt-2 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="mt-2 px-4 py-2 bg-[#1a1a1a] border-2 border-[#333333] text-[#f5f0e8] focus:outline-none focus:border-[#00f5ff]"
                   />
                 )}
               </div>
@@ -284,7 +286,7 @@ export default function BrowsePage() {
                 />
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Terrain</label>
+                  <label className="block text-sm font-medium text-[#f5f0e8] mb-2 uppercase tracking-wide">Terrain</label>
                   <div className="flex flex-wrap gap-3">
                     <Checkbox
                       label="Park"
@@ -318,11 +320,13 @@ export default function BrowsePage() {
       {/* Results */}
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+          <div className="relative">
+            <div className="w-12 h-12 border-2 border-[#00f5ff] rounded-full animate-spin border-t-transparent" />
+          </div>
         </div>
       ) : sessions.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-xl">
-          <p className="text-gray-600 mb-2">
+        <div className="text-center py-12 bg-[#1a1a1a] border-2 border-[#333333]">
+          <p className="text-[#8b8b8b] mb-2">
             {hasActiveFilters
               ? 'No sessions match your filters.'
               : 'No sessions available in the next 2 weeks.'}
@@ -332,16 +336,16 @@ export default function BrowsePage() {
               Clear filters to see all sessions
             </Button>
           ) : (
-            <p className="text-gray-500 text-sm">Check back soon or post your own session!</p>
+            <p className="text-[#6b6b6b] text-sm">Check back soon or post your own session!</p>
           )}
         </div>
       ) : (
         <div className="space-y-8">
           {groupedSessions.map((group) => (
             <div key={group.label}>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-[#f5f0e8] mb-4 flex items-center gap-2 uppercase tracking-wide">
                 {group.label}
-                <span className="text-sm font-normal text-gray-500">
+                <span className="text-sm font-normal text-[#00f5ff] lowercase">
                   ({group.sessions.length} {group.sessions.length === 1 ? 'session' : 'sessions'})
                 </span>
               </h2>
