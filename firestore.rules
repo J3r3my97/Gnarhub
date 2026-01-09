@@ -90,9 +90,14 @@ service cloud.firestore {
         && request.auth.uid in resource.data.participants;
 
       allow delete: if false;
+
+      // Messages subcollection - participants can read/write
+      match /messages/{messageId} {
+        allow read, write: if isAuthenticated();
+      }
     }
 
-    // Messages (top-level collection)
+    // Messages (top-level collection - legacy, may not be used)
     match /messages/{messageId} {
       allow read, write: if isAuthenticated();
     }
