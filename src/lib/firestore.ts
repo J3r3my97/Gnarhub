@@ -11,6 +11,7 @@ import {
   Timestamp,
   onSnapshot,
   limit as firestoreLimit,
+  runTransaction,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { User, Session, SessionRequest, Conversation, Message, Review, CounterOffer } from '@/types';
@@ -189,38 +190,12 @@ export async function createSessionRequest(
 ): Promise<string> {
   if (!db) throw new Error('Database not initialized');
 
-  // Debug: Log auth state and request data
-  const { auth } = await import('./firebase');
-  const currentUser = auth?.currentUser;
-
-  // Force refresh the token to ensure auth is current
-  let tokenValid = false;
-  try {
-    const token = await currentUser?.getIdToken(true); // force refresh
-    tokenValid = !!token;
-    console.log('[createSessionRequest] Token refreshed:', tokenValid);
-  } catch (e) {
-    console.error('[createSessionRequest] Token error:', e);
-  }
-
-  const payload = {
+  const docRef = await addDoc(collection(db, 'sessionRequests'), {
     ...data,
     counterOffer: null,
     createdAt: Timestamp.now(),
     respondedAt: null,
-  };
-
-  console.log('[createSessionRequest] Full debug:', {
-    currentUserUid: currentUser?.uid,
-    currentUserEmail: currentUser?.email,
-    riderId: data.riderId,
-    filmerId: data.filmerId,
-    uidMatchesRiderId: currentUser?.uid === data.riderId,
-    riderIsNotFilmer: data.riderId !== data.filmerId,
-    tokenValid,
   });
-
-  const docRef = await addDoc(collection(db, 'sessionRequests'), payload);
   return docRef.id;
 }
 
@@ -254,6 +229,113 @@ export async function getUserRequests(userId: string, asFilmer: boolean): Promis
   return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as SessionRequest));
 }
 
+/**
+ * Decline all other pending/counter_offered requests for a session when one is accepted
+ */
+export async function declineOtherSessionRequests(
+  sessionId: string,
+  acceptedRequestId: string
+): Promise<void> {
+  if (!db) return;
+
+  // Query pending requests for this session
+  const qPending = query(
+    collection(db, 'sessionRequests'),
+    where('sessionId', '==', sessionId),
+    where('status', '==', 'pending')
+  );
+  const snapshotPending = await getDocs(qPending);
+
+  // Query counter_offered requests for this session
+  const qCounter = query(
+    collection(db, 'sessionRequests'),
+    where('sessionId', '==', sessionId),
+    where('status', '==', 'counter_offered')
+  );
+  const snapshotCounter = await getDocs(qCounter);
+
+  const allDocs = [...snapshotPending.docs, ...snapshotCounter.docs];
+
+  // Update each non-accepted request to declined
+  const updates = allDocs
+    .filter((d) => d.id !== acceptedRequestId)
+    .map((d) =>
+      updateDoc(d.ref, {
+        status: 'declined',
+        respondedAt: Timestamp.now(),
+      })
+    );
+
+  await Promise.all(updates);
+}
+
+/**
+ * Atomically accept a session request and book the session.
+ * Uses Firestore transaction to prevent race conditions.
+ * Returns success/error for UI feedback.
+ */
+export async function acceptSessionRequestAtomic(
+  requestId: string,
+  sessionId: string,
+  riderId: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!db) return { success: false, error: 'Database not initialized' };
+
+  const firestore = db; // Local const for TypeScript narrowing
+
+  try {
+    await runTransaction(firestore, async (transaction) => {
+      // Read session first
+      const sessionRef = doc(firestore, 'sessions', sessionId);
+      const sessionDoc = await transaction.get(sessionRef);
+
+      if (!sessionDoc.exists()) {
+        throw new Error('Session not found');
+      }
+
+      const sessionData = sessionDoc.data();
+
+      // Check if session is still open
+      if (sessionData.status !== 'open') {
+        throw new Error('Session is no longer available');
+      }
+
+      // Read the request
+      const requestRef = doc(firestore, 'sessionRequests', requestId);
+      const requestDoc = await transaction.get(requestRef);
+
+      if (!requestDoc.exists()) {
+        throw new Error('Request not found');
+      }
+
+      const requestData = requestDoc.data();
+      if (requestData.status !== 'pending' && requestData.status !== 'counter_offered') {
+        throw new Error('Request is no longer pending');
+      }
+
+      // All checks passed - perform the writes atomically
+      transaction.update(requestRef, {
+        status: 'accepted',
+        respondedAt: Timestamp.now(),
+      });
+
+      transaction.update(sessionRef, {
+        status: 'booked',
+        riderId: riderId,
+        requestId: requestId,
+        updatedAt: Timestamp.now(),
+      });
+    });
+
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
 // Counter Offers
 export async function createCounterOffer(
   requestId: string,
@@ -273,31 +355,80 @@ export async function createCounterOffer(
   });
 }
 
-export async function acceptCounterOffer(requestId: string): Promise<void> {
-  if (!db) return;
+/**
+ * Atomically accept a counter offer and book the session.
+ * Uses Firestore transaction to prevent race conditions.
+ * Returns success/error for UI feedback.
+ */
+export async function acceptCounterOffer(
+  requestId: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!db) return { success: false, error: 'Database not initialized' };
 
-  // Get the request to access the counter offer details
+  const firestore = db; // Local const for TypeScript narrowing
+
+  // Get the request to access the counter offer details (outside transaction for read)
   const request = await getSessionRequest(requestId);
-  if (!request || !request.counterOffer) return;
+  if (!request || !request.counterOffer) {
+    return { success: false, error: 'Counter offer not found' };
+  }
 
-  // Update request with accepted counter offer
-  await updateDoc(doc(db, 'sessionRequests', requestId), {
-    status: 'accepted',
-    amount: request.counterOffer.amount, // Update amount to counter offer amount
-    'counterOffer.status': 'accepted',
-    respondedAt: Timestamp.now(),
-  });
+  try {
+    await runTransaction(firestore, async (transaction) => {
+      // Read session first
+      const sessionRef = doc(firestore, 'sessions', request.sessionId);
+      const sessionDoc = await transaction.get(sessionRef);
 
-  // Update the session to booked with new time
-  await updateDoc(doc(db, 'sessions', request.sessionId), {
-    status: 'booked',
-    riderId: request.riderId,
-    requestId: requestId,
-    startTime: request.counterOffer.startTime,
-    endTime: request.counterOffer.endTime,
-    rate: request.counterOffer.amount,
-    updatedAt: Timestamp.now(),
-  });
+      if (!sessionDoc.exists()) {
+        throw new Error('Session not found');
+      }
+
+      const sessionData = sessionDoc.data();
+
+      // Check if session is still open
+      if (sessionData.status !== 'open') {
+        throw new Error('Session is no longer available');
+      }
+
+      // Read the request to verify status
+      const requestRef = doc(firestore, 'sessionRequests', requestId);
+      const requestDoc = await transaction.get(requestRef);
+
+      if (!requestDoc.exists()) {
+        throw new Error('Request not found');
+      }
+
+      const requestData = requestDoc.data();
+      if (requestData.status !== 'counter_offered') {
+        throw new Error('Request status has changed');
+      }
+
+      // All checks passed - perform the writes atomically
+      transaction.update(requestRef, {
+        status: 'accepted',
+        amount: request.counterOffer!.amount,
+        'counterOffer.status': 'accepted',
+        respondedAt: Timestamp.now(),
+      });
+
+      transaction.update(sessionRef, {
+        status: 'booked',
+        riderId: request.riderId,
+        requestId: requestId,
+        startTime: request.counterOffer!.startTime,
+        endTime: request.counterOffer!.endTime,
+        rate: request.counterOffer!.amount,
+        updatedAt: Timestamp.now(),
+      });
+    });
+
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
 }
 
 export async function declineCounterOffer(requestId: string): Promise<void> {
@@ -316,8 +447,8 @@ export async function createConversation(
 ): Promise<string> {
   if (!db) throw new Error('Database not initialized');
 
-  // Check if conversation already exists for this session
-  const existing = await getConversationBySession(sessionId);
+  // Check if conversation already exists for this session WITH THESE SPECIFIC PARTICIPANTS
+  const existing = await getConversationBySessionAndParticipants(sessionId, participants);
   if (existing) {
     return existing.id;
   }
@@ -329,6 +460,35 @@ export async function createConversation(
     lastMessageAt: Timestamp.now(),
   });
   return docRef.id;
+}
+
+/**
+ * Find a conversation for a specific session with specific participants
+ */
+export async function getConversationBySessionAndParticipants(
+  sessionId: string,
+  participants: string[]
+): Promise<Conversation | null> {
+  if (!db) return null;
+
+  // Query conversations for this session
+  const q = query(collection(db, 'conversations'), where('sessionId', '==', sessionId));
+  const snapshot = await getDocs(q);
+
+  // Filter client-side to find exact participant match (order-independent)
+  const sortedTarget = [...participants].sort();
+  for (const docSnap of snapshot.docs) {
+    const convo = { id: docSnap.id, ...docSnap.data() } as Conversation;
+    const sortedConvo = [...convo.participants].sort();
+    if (
+      sortedConvo.length === sortedTarget.length &&
+      sortedConvo.every((p, i) => p === sortedTarget[i])
+    ) {
+      return convo;
+    }
+  }
+
+  return null;
 }
 
 export async function getConversation(conversationId: string): Promise<Conversation | null> {

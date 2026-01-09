@@ -12,10 +12,11 @@ import {
   sendMessage,
   getUserRequests,
   updateSessionRequest,
-  updateSession,
   createCounterOffer,
   acceptCounterOffer,
   declineCounterOffer,
+  acceptSessionRequestAtomic,
+  declineOtherSessionRequests,
 } from '@/lib/firestore';
 import { getMountainById } from '@/data/mountains';
 import { notify } from '@/lib/notify';
@@ -138,8 +139,17 @@ export default function ConversationPage({ params }: ConversationPageProps) {
     if (!request || !session || !otherUser) return;
     setResponding(true);
     try {
-      await updateSessionRequest(request.id, { status: 'accepted' });
-      await updateSession(session.id, { status: 'booked', riderId: request.riderId, requestId: request.id });
+      // Use atomic transaction to prevent race conditions
+      const result = await acceptSessionRequestAtomic(request.id, session.id, request.riderId);
+
+      if (!result.success) {
+        alert(result.error || 'Failed to accept request. The session may have been booked by someone else.');
+        await fetchData(); // Refresh to show current state
+        return;
+      }
+
+      // Auto-decline other pending requests for this session
+      await declineOtherSessionRequests(session.id, request.id);
 
       // Notify rider that request was accepted
       const mountain = getMountainById(session.mountainId);
@@ -229,7 +239,17 @@ export default function ConversationPage({ params }: ConversationPageProps) {
     if (!request || !session || !otherUser) return;
     setResponding(true);
     try {
-      await acceptCounterOffer(request.id);
+      // Use atomic transaction to prevent race conditions
+      const result = await acceptCounterOffer(request.id);
+
+      if (!result.success) {
+        alert(result.error || 'Failed to accept counter offer. The session may have been booked by someone else.');
+        await fetchData(); // Refresh to show current state
+        return;
+      }
+
+      // Auto-decline other pending requests for this session
+      await declineOtherSessionRequests(session.id, request.id);
 
       // Notify filmer that counter offer was accepted
       const mountain = getMountainById(session.mountainId);
