@@ -1,57 +1,289 @@
 @import "tailwindcss";
 
-:root {
-  /* Colors */
-  --color-primary: #2563eb;
-  --color-primary-dark: #1d4ed8;
-  --color-secondary: #f97316;
-  --color-background: #ffffff;
-  --color-surface: #f9fafb;
-  --color-border: #e5e7eb;
-  --color-text: #111827;
-  --color-text-secondary: #6b7280;
-  --color-success: #10b981;
-  --color-error: #ef4444;
-  --color-warning: #f59e0b;
+/* ═══════════════════════════════════════════════════════════════
+   GNARHUB - Indie Ski Film Aesthetic
+   Inspired by: Level 1 Productions, ON3P, 90s VHS ski edits
+   ═══════════════════════════════════════════════════════════════ */
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+@font-face {
+  font-family: 'Clash Display';
+  src: url('https://fonts.cdnfonts.com/s/84896/ClashDisplay-Variable.woff2') format('woff2');
+  font-weight: 200 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* ─── Core Palette: "Powder Day at Dusk" ─── */
+  --gnar-black: #0a0a0a;
+  --gnar-charcoal: #1a1a1a;
+  --gnar-slate: #2a2a2a;
+  --gnar-cream: #f5f0e8;
+  --gnar-snow: #ffffff;
+  --gnar-muted: #8b8b8b;
+  --gnar-border: #333333;
+
+  /* ─── Neon Accents: VHS Glow ─── */
+  --gnar-cyan: #00f5ff;
+  --gnar-cyan-dim: #00c4cc;
+  --gnar-magenta: #ff2d7c;
+  --gnar-amber: #ffb800;
+  --gnar-lime: #b8ff00;
+
+  /* ─── Semantic Colors ─── */
+  --color-primary: var(--gnar-cyan);
+  --color-primary-dark: var(--gnar-cyan-dim);
+  --color-secondary: var(--gnar-magenta);
+  --color-background: var(--gnar-black);
+  --color-surface: var(--gnar-charcoal);
+  --color-border: var(--gnar-border);
+  --color-text: var(--gnar-cream);
+  --color-text-secondary: var(--gnar-muted);
+  --color-success: var(--gnar-lime);
+  --color-error: var(--gnar-magenta);
+  --color-warning: var(--gnar-amber);
+
+  /* ─── Typography ─── */
+  --font-display: 'Clash Display', 'Impact', system-ui, sans-serif;
+  --font-mono: 'Space Mono', 'JetBrains Mono', monospace;
+  --font-body: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+
+  /* ─── Shadows: Neon Glow ─── */
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.5);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 0.6);
+  --shadow-lg: 0 10px 30px rgb(0 0 0 / 0.7);
+  --shadow-glow-cyan: 0 0 20px rgba(0, 245, 255, 0.3), 0 0 40px rgba(0, 245, 255, 0.1);
+  --shadow-glow-magenta: 0 0 20px rgba(255, 45, 124, 0.3), 0 0 40px rgba(255, 45, 124, 0.1);
+
+  /* ─── Film Grain Overlay ─── */
+  --grain-opacity: 0.08;
 }
 
 @theme inline {
   --color-primary: var(--color-primary);
   --color-primary-dark: var(--color-primary-dark);
-  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-sans: var(--font-body);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BASE STYLES
+   ═══════════════════════════════════════════════════════════════ */
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--color-background);
-  color: var(--color-text);
-  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--gnar-black);
+  color: var(--gnar-cream);
+  font-family: var(--font-body);
+  letter-spacing: 0.01em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom scrollbar */
+/* Film grain overlay - applied to main content */
+.film-grain::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TYPOGRAPHY
+   ═══════════════════════════════════════════════════════════════ */
+
+h1, h2, h3, .font-display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   VHS / RETRO EFFECTS
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Chromatic aberration on hover */
+.chromatic-hover {
+  position: relative;
+}
+
+.chromatic-hover:hover {
+  text-shadow:
+    -2px 0 var(--gnar-cyan),
+    2px 0 var(--gnar-magenta);
+}
+
+/* Scan lines overlay */
+.scan-lines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.15) 2px,
+    rgba(0, 0, 0, 0.15) 4px
+  );
+}
+
+/* VHS tracking glitch */
+@keyframes vhs-tracking {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-2px); }
+  20% { transform: translateX(2px); }
+  30% { transform: translateX(-1px); }
+  40% { transform: translateX(1px); }
+}
+
+.vhs-glitch:hover {
+  animation: vhs-tracking 0.3s ease-in-out;
+}
+
+/* Neon text glow */
+.neon-cyan {
+  color: var(--gnar-cyan);
+  text-shadow:
+    0 0 5px var(--gnar-cyan),
+    0 0 10px var(--gnar-cyan),
+    0 0 20px rgba(0, 245, 255, 0.5);
+}
+
+.neon-magenta {
+  color: var(--gnar-magenta);
+  text-shadow:
+    0 0 5px var(--gnar-magenta),
+    0 0 10px var(--gnar-magenta),
+    0 0 20px rgba(255, 45, 124, 0.5);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FISHEYE / LENS EFFECTS
+   ═══════════════════════════════════════════════════════════════ */
+
+.fisheye-border {
+  border: 3px solid var(--gnar-border);
+  border-radius: 50%;
+  position: relative;
+}
+
+.fisheye-border::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border: 2px solid var(--gnar-muted);
+  border-radius: 50%;
+  opacity: 0.4;
+}
+
+/* Vignette effect */
+.vignette {
+  position: relative;
+}
+
+.vignette::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 40%,
+    rgba(0, 0, 0, 0.6) 100%
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CUSTOM COMPONENTS
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Tape-style labels */
+.tape-label {
+  background: var(--gnar-amber);
+  color: var(--gnar-black);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.75rem;
+  transform: rotate(-2deg);
+  display: inline-block;
+}
+
+/* Film strip border */
+.film-strip {
+  border-left: 4px solid var(--gnar-charcoal);
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      var(--gnar-slate) 0px,
+      var(--gnar-slate) 8px,
+      var(--gnar-black) 8px,
+      var(--gnar-black) 16px
+    );
+  background-size: 4px 16px;
+  background-position: left;
+  background-repeat: repeat-y;
+}
+
+/* Timecode style */
+.timecode {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--gnar-magenta);
+  letter-spacing: 0.15em;
+}
+
+.timecode::before {
+  content: '● REC';
+  color: var(--gnar-magenta);
+  margin-right: 0.5rem;
+  animation: rec-blink 1s infinite;
+}
+
+@keyframes rec-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCROLLBAR
+   ═══════════════════════════════════════════════════════════════ */
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-surface);
+  background: var(--gnar-black);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 4px;
+  background: var(--gnar-slate);
+  border-radius: 0;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-secondary);
+  background: var(--gnar-cyan);
 }
 
-/* Toast animation */
+/* ═══════════════════════════════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════════════════════════════ */
+
 @keyframes slide-up {
   from {
     opacity: 0;
@@ -64,5 +296,78 @@ body {
 }
 
 .animate-slide-up {
-  animation: slide-up 0.2s ease-out;
+  animation: slide-up 0.3s ease-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out;
+}
+
+/* Subtle float animation for hero elements */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Noise flicker */
+@keyframes noise-flicker {
+  0%, 100% { opacity: var(--grain-opacity); }
+  50% { opacity: calc(var(--grain-opacity) * 1.5); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   UTILITY CLASSES
+   ═══════════════════════════════════════════════════════════════ */
+
+.bg-gnar-black { background-color: var(--gnar-black); }
+.bg-gnar-charcoal { background-color: var(--gnar-charcoal); }
+.bg-gnar-slate { background-color: var(--gnar-slate); }
+.bg-gnar-cyan { background-color: var(--gnar-cyan); }
+.bg-gnar-magenta { background-color: var(--gnar-magenta); }
+.bg-gnar-amber { background-color: var(--gnar-amber); }
+
+.text-gnar-cream { color: var(--gnar-cream); }
+.text-gnar-muted { color: var(--gnar-muted); }
+.text-gnar-cyan { color: var(--gnar-cyan); }
+.text-gnar-magenta { color: var(--gnar-magenta); }
+.text-gnar-amber { color: var(--gnar-amber); }
+
+.border-gnar { border-color: var(--gnar-border); }
+.border-gnar-cyan { border-color: var(--gnar-cyan); }
+.border-gnar-magenta { border-color: var(--gnar-magenta); }
+
+/* Sharp corners - anti-rounded for that raw look */
+.sharp { border-radius: 0 !important; }
+
+/* Glow effects */
+.glow-cyan { box-shadow: var(--shadow-glow-cyan); }
+.glow-magenta { box-shadow: var(--shadow-glow-magenta); }
+
+/* Focus states - neon outline */
+.focus-gnar:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--gnar-cyan);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE REDUCED MOTION
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

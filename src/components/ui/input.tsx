@@ -12,7 +12,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({ className, label, erro
   return (
     <div className="w-full">
       {label && (
-        <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor={inputId} className="block text-sm font-medium text-[#f5f0e8] mb-2 uppercase tracking-wide">
           {label}
         </label>
       )}
@@ -20,15 +20,16 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({ className, label, erro
         ref={ref}
         id={inputId}
         className={cn(
-          'w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400',
-          'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-          'disabled:bg-gray-100 disabled:cursor-not-allowed',
-          error && 'border-red-500 focus:ring-red-500',
+          'w-full px-4 py-3 bg-[#1a1a1a] border-2 border-[#333333] text-[#f5f0e8] placeholder-[#6b6b6b]',
+          'focus:outline-none focus:border-[#00f5ff] focus:shadow-[0_0_10px_rgba(0,245,255,0.2)]',
+          'disabled:bg-[#0a0a0a] disabled:text-[#6b6b6b] disabled:cursor-not-allowed',
+          'transition-all duration-200',
+          error && 'border-[#ff2d7c] focus:border-[#ff2d7c] focus:shadow-[0_0_10px_rgba(255,45,124,0.2)]',
           className
         )}
         {...props}
       />
-      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-sm text-[#ff2d7c]">{error}</p>}
     </div>
   );
 });
@@ -46,7 +47,7 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(({ className, la
   return (
     <div className="w-full">
       {label && (
-        <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor={inputId} className="block text-sm font-medium text-[#f5f0e8] mb-2 uppercase tracking-wide">
           {label}
         </label>
       )}
@@ -54,15 +55,16 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(({ className, la
         ref={ref}
         id={inputId}
         className={cn(
-          'w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 resize-none',
-          'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-          'disabled:bg-gray-100 disabled:cursor-not-allowed',
-          error && 'border-red-500 focus:ring-red-500',
+          'w-full px-4 py-3 bg-[#1a1a1a] border-2 border-[#333333] text-[#f5f0e8] placeholder-[#6b6b6b] resize-none',
+          'focus:outline-none focus:border-[#00f5ff] focus:shadow-[0_0_10px_rgba(0,245,255,0.2)]',
+          'disabled:bg-[#0a0a0a] disabled:text-[#6b6b6b] disabled:cursor-not-allowed',
+          'transition-all duration-200',
+          error && 'border-[#ff2d7c] focus:border-[#ff2d7c] focus:shadow-[0_0_10px_rgba(255,45,124,0.2)]',
           className
         )}
         {...props}
       />
-      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-sm text-[#ff2d7c]">{error}</p>}
     </div>
   );
 });
