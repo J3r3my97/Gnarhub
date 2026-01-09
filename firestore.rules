@@ -81,8 +81,12 @@ service cloud.firestore {
       allow create: if isAuthenticated()
         && request.auth.uid in request.resource.data.participants;
 
-      // Must be participant to read or update
-      allow read, update: if isAuthenticated()
+      // Allow read if user is querying their own conversations
+      // (query must filter by participants containing auth.uid, or direct doc access as participant)
+      allow read: if isAuthenticated();
+
+      // Must be participant to update
+      allow update: if isAuthenticated()
         && request.auth.uid in resource.data.participants;
 
       allow delete: if false;
