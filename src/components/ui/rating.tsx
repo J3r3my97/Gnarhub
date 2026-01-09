@@ -18,10 +18,10 @@ export function RatingDisplay({ rating, reviewCount, size = 'md', className }: R
 
   return (
     <div className={cn('flex items-center gap-1', className)}>
-      <Star className={cn(sizes[size], 'fill-amber-400 text-amber-400')} />
-      <span className={cn('font-medium', size === 'sm' ? 'text-sm' : 'text-base')}>{rating.toFixed(1)}</span>
+      <Star className={cn(sizes[size], 'fill-[#ffb800] text-[#ffb800]')} />
+      <span className={cn('font-medium text-[#f5f0e8]', size === 'sm' ? 'text-sm' : 'text-base')}>{rating.toFixed(1)}</span>
       {reviewCount !== undefined && (
-        <span className={cn('text-gray-500', size === 'sm' ? 'text-xs' : 'text-sm')}>({reviewCount})</span>
+        <span className={cn('text-[#8b8b8b]', size === 'sm' ? 'text-xs' : 'text-sm')}>({reviewCount})</span>
       )}
     </div>
   );
@@ -41,12 +41,12 @@ export function RatingInput({ value, onChange, className }: RatingInputProps) {
           key={star}
           type="button"
           onClick={() => onChange(star)}
-          className="focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+          className="focus:outline-none focus:ring-2 focus:ring-[#00f5ff]"
         >
           <Star
             className={cn(
               'h-8 w-8 transition-colors',
-              star <= value ? 'fill-amber-400 text-amber-400' : 'text-gray-300 hover:text-amber-200'
+              star <= value ? 'fill-[#ffb800] text-[#ffb800]' : 'text-[#333333] hover:text-[#ffb800]/50'
             )}
           />
         </button>

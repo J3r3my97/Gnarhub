@@ -18,14 +18,14 @@ interface SessionCardProps {
 export function SessionCard({ session, filmer, mountain }: SessionCardProps) {
   return (
     <Link href={`/filmer/${filmer.id}?session=${session.id}`}>
-      <Card className="hover:shadow-md transition-shadow cursor-pointer">
+      <Card className="cursor-pointer">
         <CardContent className="p-4">
           <div className="flex items-start gap-4">
             <Avatar src={filmer.profilePhoto} alt={filmer.displayName} size="lg" />
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-gray-900 truncate">{filmer.displayName}</h3>
-                <span className="font-semibold text-gray-900">{formatCurrency(session.rate)}</span>
+                <h3 className="font-semibold text-[#f5f0e8] truncate">{filmer.displayName}</h3>
+                <span className="font-semibold text-[#00f5ff]">{formatCurrency(session.rate)}</span>
               </div>
               {filmer.averageRating && (
                 <RatingDisplay
@@ -40,7 +40,7 @@ export function SessionCard({ session, filmer, mountain }: SessionCardProps) {
                   <TerrainBadge key={tag} terrain={tag} />
                 ))}
               </div>
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="text-sm text-[#8b8b8b] mt-2">
                 {formatDate(session.date)} • {formatTimeRange(session.startTime, session.endTime)} • {mountain.name}
               </p>
             </div>
@@ -54,14 +54,14 @@ export function SessionCard({ session, filmer, mountain }: SessionCardProps) {
 // Compact version for filmer profile
 export function SessionCardCompact({ session, mountain }: { session: Session; mountain: Mountain }) {
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card>
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="font-medium text-gray-900">
+            <p className="font-medium text-[#f5f0e8]">
               {formatDate(session.date)} • {formatTimeRange(session.startTime, session.endTime)}
             </p>
-            <p className="text-sm text-gray-500">{mountain.name}</p>
+            <p className="text-sm text-[#8b8b8b]">{mountain.name}</p>
             <div className="flex flex-wrap gap-1 mt-2">
               {session.terrainTags.map((tag) => (
                 <TerrainBadge key={tag} terrain={tag} />
@@ -69,7 +69,7 @@ export function SessionCardCompact({ session, mountain }: { session: Session; mo
             </div>
           </div>
           <div className="text-right flex flex-col items-end gap-2">
-            <p className="font-semibold text-gray-900 text-lg">{formatCurrency(session.rate)}</p>
+            <p className="font-semibold text-[#00f5ff] text-lg">{formatCurrency(session.rate)}</p>
             <Link href={`/request/${session.id}`}>
               <Button size="sm">Book Session</Button>
             </Link>

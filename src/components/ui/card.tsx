@@ -7,7 +7,12 @@ const Card = forwardRef<HTMLDivElement, CardProps>(({ className, ...props }, ref
   return (
     <div
       ref={ref}
-      className={cn('bg-white border border-gray-200 rounded-xl shadow-sm', className)}
+      className={cn(
+        'bg-[#1a1a1a] border-2 border-[#333333] shadow-lg',
+        'transition-all duration-300',
+        'hover:border-[#00f5ff]/30 hover:shadow-[0_0_30px_rgba(0,245,255,0.1)]',
+        className
+      )}
       {...props}
     />
   );
@@ -16,19 +21,31 @@ const Card = forwardRef<HTMLDivElement, CardProps>(({ className, ...props }, ref
 Card.displayName = 'Card';
 
 const CardHeader = forwardRef<HTMLDivElement, CardProps>(({ className, ...props }, ref) => {
-  return <div ref={ref} className={cn('px-4 py-3 border-b border-gray-100', className)} {...props} />;
+  return (
+    <div
+      ref={ref}
+      className={cn('px-5 py-4 border-b-2 border-[#333333]', className)}
+      {...props}
+    />
+  );
 });
 
 CardHeader.displayName = 'CardHeader';
 
 const CardContent = forwardRef<HTMLDivElement, CardProps>(({ className, ...props }, ref) => {
-  return <div ref={ref} className={cn('p-4', className)} {...props} />;
+  return <div ref={ref} className={cn('p-5', className)} {...props} />;
 });
 
 CardContent.displayName = 'CardContent';
 
 const CardFooter = forwardRef<HTMLDivElement, CardProps>(({ className, ...props }, ref) => {
-  return <div ref={ref} className={cn('px-4 py-3 border-t border-gray-100', className)} {...props} />;
+  return (
+    <div
+      ref={ref}
+      className={cn('px-5 py-4 border-t-2 border-[#333333]', className)}
+      {...props}
+    />
+  );
 });
 
 CardFooter.displayName = 'CardFooter';

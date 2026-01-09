@@ -114,8 +114,10 @@ function PostSessionFormInner() {
 
   if (authLoading || !user) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] bg-[#0a0a0a]">
+        <div className="relative">
+          <div className="w-12 h-12 border-2 border-[#00f5ff] rounded-full animate-spin border-t-transparent" />
+        </div>
       </div>
     );
   }
@@ -124,9 +126,9 @@ function PostSessionFormInner() {
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <BackLink href="/dashboard" label="Back to Dashboard" />
 
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Post a Session</h1>
+      <h1 className="text-2xl font-bold text-[#f5f0e8] mb-6 uppercase tracking-wide">Post a Session</h1>
 
-      <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-xl p-6">
+      <form onSubmit={handleSubmit} className="bg-[#1a1a1a] border-2 border-[#333333] p-6">
         <div className="space-y-6">
           <Select
             label="Mountain"
@@ -154,7 +156,7 @@ function PostSessionFormInner() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Terrain</label>
+            <label className="block text-sm font-medium text-[#f5f0e8] mb-2 uppercase tracking-wide">Terrain</label>
             <div className="flex flex-wrap gap-4">
               <Checkbox
                 label="Park"
@@ -183,7 +185,7 @@ function PostSessionFormInner() {
               min={RATE_MIN.toString()}
               max={RATE_MAX.toString()}
             />
-            <p className="text-sm text-gray-500 mt-1">Range: ${RATE_MIN}-${RATE_MAX}</p>
+            <p className="text-sm text-[#8b8b8b] mt-1">Range: ${RATE_MIN}-${RATE_MAX}</p>
           </div>
 
           <Textarea
@@ -194,7 +196,7 @@ function PostSessionFormInner() {
             rows={3}
           />
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-[#ff2d7c]">{error}</p>}
 
           <Button type="submit" className="w-full" size="lg" loading={submitting}>
             Post Session
@@ -207,8 +209,10 @@ function PostSessionFormInner() {
 
 function PostSessionLoading() {
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+    <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] bg-[#0a0a0a]">
+      <div className="relative">
+        <div className="w-12 h-12 border-2 border-[#00f5ff] rounded-full animate-spin border-t-transparent" />
+      </div>
     </div>
   );
 }
