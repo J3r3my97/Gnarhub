@@ -12,6 +12,12 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    // Check if the current user is an admin
+    function isAdmin() {
+      return isAuthenticated()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
     // Validate rate is within bounds
     function isValidRate(rate) {
       return rate >= 20 && rate <= 500;
@@ -22,11 +28,11 @@ service cloud.firestore {
       return date >= request.time.date();
     }
 
-    // Users - anyone authenticated can read, only owner can write
+    // Users - anyone authenticated can read, only owner can write (admins can update status)
     match /users/{userId} {
       allow read: if isAuthenticated();
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
       allow delete: if false; // Users cannot delete their accounts directly
     }
 
@@ -113,7 +119,15 @@ service cloud.firestore {
         && request.resource.data.rating >= 1
         && request.resource.data.rating <= 5;
 
-      // No editing or deleting reviews
+      // Admins can delete reviews for moderation
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    // Admin logs (for audit trail)
+    match /adminLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
       allow update, delete: if false;
     }
   }
