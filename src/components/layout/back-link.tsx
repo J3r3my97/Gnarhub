@@ -14,7 +14,7 @@ export function BackLink({ href, label = 'Back' }: BackLinkProps) {
 
   if (href) {
     return (
-      <Link href={href} className="inline-flex items-center gap-1 text-gray-600 hover:text-gray-900 mb-4">
+      <Link href={href} className="inline-flex items-center gap-1 text-[#8b8b8b] hover:text-[#00f5ff] mb-4 transition-colors">
         <ArrowLeft className="h-4 w-4" />
         <span>{label}</span>
       </Link>
@@ -24,7 +24,7 @@ export function BackLink({ href, label = 'Back' }: BackLinkProps) {
   return (
     <button
       onClick={() => router.back()}
-      className="inline-flex items-center gap-1 text-gray-600 hover:text-gray-900 mb-4"
+      className="inline-flex items-center gap-1 text-[#8b8b8b] hover:text-[#00f5ff] mb-4 transition-colors"
     >
       <ArrowLeft className="h-4 w-4" />
       <span>{label}</span>

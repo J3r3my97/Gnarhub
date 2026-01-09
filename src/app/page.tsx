@@ -191,13 +191,13 @@ export default function HomePage() {
 
                   <div className="relative z-10">
                     <div className="text-[#8b8b8b] uppercase text-sm tracking-wider mb-2">
-                      Typical Session Rate
+                      Session Rates
                     </div>
-                    <div className="text-5xl md:text-6xl font-bold text-[#f5f0e8] mb-4">
-                      $40<span className="text-[#8b8b8b]">-</span>80
+                    <div className="text-3xl md:text-4xl font-bold text-[#f5f0e8] mb-4 leading-tight">
+                      Up to the filmer
                     </div>
                     <div className="text-[#8b8b8b]">
-                      Cover your filmer&apos;s lift ticket
+                      At least beer money appreciated
                     </div>
 
                     <div className="mt-6 pt-6 border-t border-[#333333]">
