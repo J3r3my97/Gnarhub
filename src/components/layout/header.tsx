@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui';
 import { Avatar } from '@/components/ui';
-import { Menu, X, MessageSquare, LayoutDashboard } from 'lucide-react';
+import { Menu, X, MessageSquare, LayoutDashboard, Shield } from 'lucide-react';
 import { useState } from 'react';
 
 export function Header() {
@@ -33,6 +33,11 @@ export function Header() {
                 <Link href="/dashboard" className="text-gray-600 hover:text-gray-900">
                   <LayoutDashboard className="h-5 w-5" />
                 </Link>
+                {user.isAdmin && (
+                  <Link href="/admin" className="text-gray-600 hover:text-gray-900" title="Admin">
+                    <Shield className="h-5 w-5" />
+                  </Link>
+                )}
               </>
             )}
           </nav>
@@ -94,6 +99,15 @@ export function Header() {
                 >
                   Dashboard
                 </Link>
+                {user.isAdmin && (
+                  <Link
+                    href="/admin"
+                    className="block text-gray-600 hover:text-gray-900 font-medium"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Admin
+                  </Link>
+                )}
                 <Link
                   href="/dashboard/profile"
                   className="block text-gray-600 hover:text-gray-900 font-medium"

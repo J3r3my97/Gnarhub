@@ -6,6 +6,7 @@ export type TerrainTag = 'park' | 'all-mountain' | 'groomers';
 export type SessionStatus = 'open' | 'booked' | 'completed' | 'cancelled';
 export type RequestStatus = 'pending' | 'accepted' | 'declined' | 'cancelled' | 'completed' | 'counter_offered';
 export type CounterOfferStatus = 'pending' | 'accepted' | 'declined' | 'expired';
+export type UserStatus = 'active' | 'suspended' | 'deleted';
 
 // User
 export interface User {
@@ -33,6 +34,10 @@ export interface User {
   sessionsAsFilmer: number;
   averageRating: number | null;
   reviewCount: number;
+
+  // Admin
+  isAdmin?: boolean;
+  status?: UserStatus;
 }
 
 // Mountain

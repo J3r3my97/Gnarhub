@@ -65,6 +65,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sessionsAsFilmer: 0,
       averageRating: null,
       reviewCount: 0,
+      isAdmin: false,
+      status: 'active',
     };
 
     await setDoc(doc(db, 'users', firebaseUser.uid), newUser);
