@@ -192,20 +192,35 @@ export async function createSessionRequest(
   // Debug: Log auth state and request data
   const { auth } = await import('./firebase');
   const currentUser = auth?.currentUser;
-  console.log('[createSessionRequest] Debug info:', {
-    currentUserUid: currentUser?.uid,
-    riderId: data.riderId,
-    filmerId: data.filmerId,
-    uidMatchesRiderId: currentUser?.uid === data.riderId,
-    riderIsNotFilmer: data.riderId !== data.filmerId,
-  });
 
-  const docRef = await addDoc(collection(db, 'sessionRequests'), {
+  // Force refresh the token to ensure auth is current
+  let tokenValid = false;
+  try {
+    const token = await currentUser?.getIdToken(true); // force refresh
+    tokenValid = !!token;
+    console.log('[createSessionRequest] Token refreshed:', tokenValid);
+  } catch (e) {
+    console.error('[createSessionRequest] Token error:', e);
+  }
+
+  const payload = {
     ...data,
     counterOffer: null,
     createdAt: Timestamp.now(),
     respondedAt: null,
+  };
+
+  console.log('[createSessionRequest] Full debug:', {
+    currentUserUid: currentUser?.uid,
+    currentUserEmail: currentUser?.email,
+    riderId: data.riderId,
+    filmerId: data.filmerId,
+    uidMatchesRiderId: currentUser?.uid === data.riderId,
+    riderIsNotFilmer: data.riderId !== data.filmerId,
+    tokenValid,
   });
+
+  const docRef = await addDoc(collection(db, 'sessionRequests'), payload);
   return docRef.id;
 }
 
